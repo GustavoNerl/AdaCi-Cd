@@ -1,0 +1,49 @@
+name: CI/CD para projeto da ADA
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-e-teste:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: 11
+          distribution: 'adopt'
+
+      - name: Setup Maven Action
+        uses: s4u/setup-maven-action@v1.9.0
+
+      - name: Compilação do codigo java
+        run: mvn package
+
+      - name: Rodar testes unitarios
+        run: mvn test
+
+  deploy:
+    needs: build-e-teste
+    if: ${{ success() }}
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Deploy para o servidor
+        if: ${{ env.DEPLOY_ENABLED == 'false' }}
+        run: |
+          echo "Realiza deploy"
+          
+
+      - name: Health check
+        run: |
+          echo "Verificando saúde da aplicação..."
+
+      - name: Rollback se unhealthy
+        if: ${{ steps.health-check.outputs.status != 'healthy' }}
+        run: |
+          echo "Executado o Rollback!"
